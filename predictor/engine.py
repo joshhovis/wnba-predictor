@@ -1,4 +1,4 @@
-from services.stats_api import get_team_season_stats
+from services.stats_api import get_team_avg_score
 from services.injury_scraper import get_injuries, get_team_injuries
 from utils.team_map import get_abbr_from_full_name
 from predictor.logger import log_prediction
@@ -18,13 +18,12 @@ def predict_game(game, team_ids, db_connection):
         return
     
     # Get stats
-    home_stats = get_team_season_stats(home_id)
-    away_stats = get_team_season_stats(away_id)
+    home_ppg, home_opg = get_team_avg_score(home_id)
+    away_ppg, away_opg = get_team_avg_score(away_id)
 
-    home_ppg = home_stats.get("points", {}).get("for", {}).get("average", 0)
-    away_ppg = away_stats.get("points", {}).get("for", {}).get("average", 0)
-    home_opg = home_stats.get("points", {}).get("against", {}).get("average", 0)
-    away_opg = away_stats.get("points", {}).get("against", {}).get("average", 0)
+    if home_ppg == 0 and away_ppg == 0:
+        print(f"⚠️ No scoring data found for {home} or {away}")
+        return
 
     # Raw predicted total
     predicted_total = (home_ppg + away_ppg + home_opg + away_opg) / 2
@@ -40,14 +39,19 @@ def predict_game(game, team_ids, db_connection):
     total_injured = len(injured_home) + len(injured_away)
     predicted_total -= total_injured * 5 # rough adjustment for now
 
+    print(f"  → home_ppg: {home_ppg}, away_ppg: {away_ppg}, home_opg: {home_opg}, away_opg: {away_opg}")
+    print(f"  → Pre-injury predicted total: {(home_ppg + away_ppg + home_opg + away_opg) / 2}")
+    print(f"  → Total OUT players: {total_injured}")
+
     # Prediction decision
     prediction = "Over" if predicted_total > line else "Under"
-    spread = abs(predicted_total - line)
+    predicted_total = round(predicted_total, 2)
+    spread = round(abs(predicted_total - line), 2)
     confidence = min(1.0, max(0.5, spread / 10))
 
     injury_notes = f"{len(injured_home)} OUT for {home}, {len(injured_away)} OUT for {away}"
 
-    print(f"🏀 {home} vs {away} ({sportsbook}) → {prediction} ({predicted_total:.1f} vs line {line})")
+    print(f"🏀 {home} vs {away} ({sportsbook}) → {prediction} (Predicted: {predicted_total:.1f} | Line: {line} | Spread: {spread:.1f})")
 
     # Log prediction
     log_prediction(
