@@ -55,7 +55,7 @@ def get_team_avg_score(team_id, num_games=8):
         return 0, 0
     
     response = res.json().get("response", [])
-    print(f"🔍 Found {len(response)} total games for team {team_id}")
+    # print(f"🔍 Found {len(response)} total games for team {team_id}")
 
     # Fallback that removes league filter if no games are found for a team - Had a bug where the new team (Golden State Valkyries) were not displaying game data when using a league filter
     if len(response) == 0:
@@ -64,8 +64,8 @@ def get_team_avg_score(team_id, num_games=8):
         res = requests.get(fallback_url, headers=HEADERS)
         response = res.json().get("response", [])
 
-    for g in response[:5]:
-        print(f"  - {g['date']} | Status: {g['status']['short']} | Home: {g['teams']['home']['name']} | Away: {g['teams']['away']['name']}")
+    # for g in response[:5]:
+        # print(f"  - {g['date']} | Status: {g['status']['short']} | Home: {g['teams']['home']['name']} | Away: {g['teams']['away']['name']}")
 
     recent_games = [game for game in response if game.get("status", {}).get("short") in ["FT", "AOT"]][:num_games]
 

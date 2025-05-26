@@ -9,7 +9,7 @@ def get_todays_wnba_games(date_str=None):
     params = {
         "regions": "us", # Search only U.S. sportsbook
         "markets": "totals", # Only searching over/under
-        "bookmakers": "draftkings",
+        "bookmakers": "fanduel,draftkings",
         "oddsFormat": "decimal",
         "dateFormat": "iso",
         "apiKey": ODDS_API_KEY
@@ -38,7 +38,7 @@ def get_todays_wnba_games(date_str=None):
         away = game.get("away_team", "Unknown")
 
         for bookmaker in game["bookmakers"]:
-            if bookmaker["key"] not in ["draftkings"]:
+            if bookmaker["key"] not in ["fanduel", "draftkings"]:
                 continue
 
             for market in bookmaker["markets"]:
