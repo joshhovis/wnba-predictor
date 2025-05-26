@@ -43,3 +43,13 @@ def fetch_and_store_wnba_teams():
     conn.commit()
     conn.close()
     print(f"✅ {len(teams)} teams fetched and cached.")
+
+def get_team_season_stats(team_id):
+    url = f"{BASE_URL}/teams/statistics?league=13&season=2025&team={team_id}"
+    res = requests.get(url, headers=HEADERS)
+
+    if res.status_code != 200:
+        print(f"⚠️ Failed to get stats for team ID {team_id}")
+        return None
+    
+    return res.json().get("response", {})
