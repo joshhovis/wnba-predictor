@@ -27,6 +27,8 @@ def fetch_and_store_wnba_teams():
     cursor = conn.cursor()
 
     for team in teams:
+        if team["country"]["name"] != "USA":
+            continue
         team_id = team["id"]
         name = team["name"]
         logo = team["logo"]
