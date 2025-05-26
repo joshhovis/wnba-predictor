@@ -9,8 +9,12 @@ def main():
     print("Fetching team data...")
     fetch_and_store_wnba_teams()
 
-    print("Fetching today's game odds...")
-    games = get_todays_wnba_games()
+    # Prompt for date input
+    user_date = input("📅 Enter a date (YYYY-MM-DD) or press Enter for today: ").strip()
+    date_to_use = user_date if user_date else None
+
+    print("Fetching WNBA odds for: {date_to_use or 'today'}")
+    games = get_todays_wnba_games(date_to_use)
 
     for game in games:
         print(game)

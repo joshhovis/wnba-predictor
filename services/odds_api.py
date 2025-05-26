@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 from utils.helpers import ODDS_API_KEY
 
-def get_todays_wnba_games():
+def get_todays_wnba_games(date_str=None):
     url = "https://api.the-odds-api.com/v4/sports/basketball_wnba/odds"
     params = {
         "regions": "us", # Search only U.S. sportsbook
@@ -21,12 +21,14 @@ def get_todays_wnba_games():
     games = res.json()
 
     # Filter for only today's games
-    today_str = datetime.now().date().isoformat()
+    if date_str is None:
+        date_str = datetime.now().date().isoformat()
+        
     today_games = []
 
     for game in games:
         game_time = game.get("commence_time", "")
-        if not game_time.startswith(today_str):
+        if not game_time.startswith(date_str):
             continue
             
         home = game.get("home_team", "Unknown")
