@@ -57,7 +57,7 @@ def predict_game(game, team_ids, db_connection):
     prediction = "Over" if predicted_total > line else "Under"
     predicted_total = round(predicted_total, 2)
     spread = round(abs(predicted_total - line), 2)
-    confidence = min(1.0, max(0.5, spread / 10))
+    confidence = round(min(1.0, max(0.5, spread / 10)), 2)
 
     injury_notes = f"{len(injured_home)} OUT for {home}, {len(injured_away)} OUT for {away}"
 
@@ -73,6 +73,7 @@ def predict_game(game, team_ids, db_connection):
         sportsbook=sportsbook,
         line=line,
         predicted_total=predicted_total,
+        spread=spread,
         prediction=prediction,
         confidence=confidence,
         injury_notes=injury_notes
