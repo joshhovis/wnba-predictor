@@ -47,7 +47,7 @@ def fetch_and_store_wnba_teams():
 
 def get_team_avg_score(team_id, num_games=8):
     print(f"📊 Fetching recent games for team {team_id}...")
-    games_url = f"{BASE_URL}/games?team={team_id}&season=2025&league=13"
+    games_url = f"{BASE_URL}/games?team={team_id}&season=2024&league=13"
     res = requests.get(games_url, headers=HEADERS)
 
     if res.status_code != 200:
@@ -55,6 +55,18 @@ def get_team_avg_score(team_id, num_games=8):
         return 0, 0
     
     response = res.json().get("response", [])
+    print(f"🔍 Found {len(response)} total games for team {team_id}")
+
+    # Fallback that removes league filter if no games are found for a team - Had a bug where the new team (Golden State Valkyries) were not displaying game data when using a league filter
+    if len(response) == 0:
+        print(f"⚠️ No games returned for team {team_id} with league filter. Trying without league...")
+        fallback_url = f"{BASE_URL}/games?team={team_id}&season=2025"
+        res = requests.get(fallback_url, headers=HEADERS)
+        response = res.json().get("response", [])
+
+    for g in response[:5]:
+        print(f"  - {g['date']} | Status: {g['status']['short']} | Home: {g['teams']['home']['name']} | Away: {g['teams']['away']['name']}")
+
     recent_games = [game for game in response if game.get("status", {}).get("short") in ["FT", "AOT"]][:num_games]
 
     if not recent_games:
@@ -108,3 +120,40 @@ def get_team_avg_score(team_id, num_games=8):
         return 0, 0
     
     return round(total_points / counted, 1), round(total_allowed / counted, 1)
+
+def get_h2h_avg_score(team1_id, team2_id, num_games=5, min_valid_games=3):
+    fallback_seasons = ["2025", "2024", "2023"]
+    valid_games = []
+
+    for season in fallback_seasons:
+        print(f"🔎 Checking H2H for season {season}")
+        url = f"{BASE_URL}/games?h2h={team1_id}-{team2_id}&league=13&season={season}"
+        res = requests.get(url, headers=HEADERS)
+
+        if res.status_code != 200:
+            print(f"⚠️ Failed to get H2H for {team1_id}-{team2_id} in {season}")
+            continue
+
+        response = res.json().get("response", [])
+        for g in response:
+            scores = g.get("scores", {})
+            if scores.get("home", {}).get("total") is not None and scores.get("away", {}).get("total") is not None:
+                valid_games.append(g)
+
+        # ✅ Stop if we hit our minimum
+        if len(valid_games) >= min_valid_games:
+            break
+
+    if len(valid_games) < min_valid_games:
+        print(f"⚠️ Only found {len(valid_games)} valid H2H games for {team1_id} vs {team2_id}. Skipping.")
+        return None
+
+    valid_games = sorted(valid_games, key=lambda g: g["date"], reverse=True)[:num_games]
+
+    total_score = 0
+    for game in valid_games:
+        s = game["scores"]
+        total_score += s["home"]["total"] + s["away"]["total"]
+
+    print(f"ℹ️ Using {len(valid_games)} H2H games for {team1_id} vs {team2_id}")
+    return round(total_score / len(valid_games), 2)

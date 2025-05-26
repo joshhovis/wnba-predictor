@@ -1,4 +1,5 @@
 from services.stats_api import get_team_avg_score
+from services.stats_api import get_h2h_avg_score
 from services.injury_scraper import get_injuries, get_team_injuries
 from utils.team_map import get_abbr_from_full_name
 from predictor.logger import log_prediction
@@ -27,6 +28,15 @@ def predict_game(game, team_ids, db_connection):
 
     # Raw predicted total
     predicted_total = (home_ppg + away_ppg + home_opg + away_opg) / 2
+
+    # Factor in h2h history between teams
+    h2h_total = get_h2h_avg_score(home_id, away_id)
+    if h2h_total is not None:
+        predicted_total = (predicted_total + h2h_total) / 2
+        print(f"  → H2H adjusted total: {predicted_total}")
+    else:
+        print(f"  → H2H skipped due to insufficient historical data")
+
 
     # Account for injuries
     injuries = get_injuries()
