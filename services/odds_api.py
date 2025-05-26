@@ -1,5 +1,7 @@
+import pytz
 import requests
 from datetime import datetime
+from dateutil import parser
 from utils.helpers import ODDS_API_KEY
 
 def get_todays_wnba_games(date_str=None):
@@ -20,15 +22,16 @@ def get_todays_wnba_games(date_str=None):
     
     games = res.json()
 
-    # Filter for only today's games
-    if date_str is None:
-        date_str = datetime.now().date().isoformat()
+    eastern = pytz.timezone("US/Eastern")
+    target_date = date_str or datetime.now(eastern).date().isoformat()
 
     today_games = []
 
     for game in games:
-        game_time = game.get("commence_time", "")
-        if not game_time.startswith(date_str):
+        utc_time = parser.isoparse(game.get("commence_time", ""))
+        local_time = utc_time.astimezone(eastern).date().isoformat()
+
+        if local_time != target_date:
             continue
             
         home = game.get("home_team", "Unknown")
@@ -53,7 +56,7 @@ def get_todays_wnba_games(date_str=None):
                     "away": away,
                     "sportsbook": bookmaker["key"],
                     "line": total_line,
-                    "start_time": game_time
+                    "start_time": game["commence_time"]
                 })
 
     print(f"✅ Found {len(today_games)} WNBA over/under lines for today.")
