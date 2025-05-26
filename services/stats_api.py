@@ -50,6 +50,16 @@ def get_team_season_stats(team_id):
 
     if res.status_code != 200:
         print(f"⚠️ Failed to get stats for team ID {team_id}")
-        return None
-    
-    return res.json().get("response", {})
+        return {}
+
+    response = res.json().get("response", {})
+
+    # ✅ FIX: if it's a list, unwrap it
+    if isinstance(response, list):
+        if len(response) > 0:
+            return response[0]
+        else:
+            return {}
+
+    return response
+

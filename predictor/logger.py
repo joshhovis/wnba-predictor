@@ -39,3 +39,20 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+def log_prediction(conn, game_id, date, team_home, team_away, sportsbook, line, predicted_total, prediction, confidence, injury_notes):
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR IGNORE INTO predictions (
+            game_id, date, team_home, team_away,
+            sportsbook, line, predicted_total,
+            prediction, confidence, injury_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        game_id, date, team_home, team_away,
+        sportsbook, line, predicted_total,
+        prediction, confidence, injury_notes
+    ))
+
+    conn.commit()

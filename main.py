@@ -1,6 +1,8 @@
 from predictor.logger import init_db
+from predictor.engine import predict_game
 from services.stats_api import fetch_and_store_wnba_teams
 from services.odds_api import get_todays_wnba_games
+import sqlite3
 
 def main():
     print("Initializing database...")
@@ -16,8 +18,18 @@ def main():
     print("Fetching WNBA odds for: {date_to_use or 'today'}")
     games = get_todays_wnba_games(date_to_use)
 
+    # Load cached team IDs from DB
+    conn = sqlite3.connect("data/db.sqlite")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, short_name FROM teams")
+    team_ids = {
+        short_name.strip(): team_id
+        for team_id, short_name in cursor.fetchall()
+    }
+
+    # print("Loaded team IDs:", team_ids)
     for game in games:
-        print(game)
+        predict_game(game, team_ids, conn)
 
     print("Setup complete.")
 
