@@ -8,6 +8,8 @@ st.set_page_config(page_title="WNBA Predictor", layout="wide")
 st.title("🏀 WNBA Over/Under Predictor")
 st.markdown("View predictions made by the CLI model.")
 
+st.sidebar.header("🔍 Filter Predictions")
+
 # Load prediction data from SQLite
 @st.cache_data
 def load_predictions():
@@ -23,8 +25,44 @@ def update_result(game_id, new_result):
     conn.commit()
     conn.close()
 
-# Display predictions
-df = load_predictions()
+# Load full data
+df_full = load_predictions()
+
+# Sidebar filters
+selected_result = st.sidebar.multiselect(
+    "Filter by result", options=["Correct", "Incorrect", "Pending"], default=["Correct", "Incorrect", "Pending"]
+)
+
+confidence_range = st.sidebar.slider("Confidence Range", 0.5, 1.0, (0.5, 1.0), step=0.01)
+
+selected_sportsbooks = st.sidebar.multiselect(
+    "Sportsbooks", options=sorted(df_full["sportsbook"].unique()), default=list(df_full["sportsbook"].unique())
+)
+
+df = df_full[
+    (df_full["result"].isin(selected_result)) &
+    (df_full["confidence"].between(confidence_range[0], confidence_range[1])) &
+    (df_full["sportsbook"].isin(selected_sportsbooks))
+]
+
+show_summary = st.checkbox("📊 Show Performance Summary", value=False)
+
+if show_summary:
+    st.subheader("📈 Performance Summary")
+    if not df.empty:
+        correct = (df["result"] == "Correct").sum()
+        incorrect = (df["result"] == "Incorrect").sum()
+        total = correct + incorrect
+
+        if total > 0:
+            hit_rate = round((correct / total) * 100, 2)
+            st.markdown(f"**🎯 Hit Rate:** {hit_rate}% ({correct}/{total})")
+        else:
+            st.markdown("🎯 Hit Rate: _Not enough completed results yet_")
+
+        st.bar_chart(df["result"].value_counts())
+    else:
+        st.info("No predictions match the selected filters.")
 
 if df.empty:
     st.warning("No predictions found in the database. Run the CLI script first.")
