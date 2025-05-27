@@ -66,7 +66,7 @@ def predict_game(game, team_ids, db_connection):
     # Log prediction
     log_prediction(
         conn=db_connection,
-        game_id=f"{home}_vs_{away}_{start_time}",
+        game_id=f"{home}_vs_{away}_{start_time}_{sportsbook}",
         date=start_time.split("T")[0],
         team_home=home,
         team_away=away,
